@@ -1,0 +1,200 @@
+{
+  "name": "csharp-test-lister",
+  "displayName": "C# Test Lister",
+  "description": "Lists and navigates tests in C# .NET projects (xUnit, NUnit, MSTest)",
+  "version": "0.1.0",
+  "publisher": "csharp-test-lister",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "csharp",
+    "dotnet",
+    "test",
+    "xunit",
+    "nunit",
+    "mstest"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/*.csproj",
+    "workspaceContains:**/*.cs"
+  ],
+  "main": "./out/extension.js",
+  "icon": "media/icon.png",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "csharp-test-lister",
+          "title": "C# Tests",
+          "icon": "media/test-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "csharp-test-lister": [
+        {
+          "id": "csharpTestExplorer",
+          "name": "Test Explorer",
+          "icon": "media/test-icon.svg",
+          "contextualTitle": "C# Test Explorer"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "csharpTestLister.refresh",
+        "title": "Refresh Tests",
+        "icon": "$(refresh)",
+        "category": "C# Test Lister"
+      },
+      {
+        "command": "csharpTestLister.runTest",
+        "title": "Run Test",
+        "icon": "$(play)",
+        "category": "C# Test Lister"
+      },
+      {
+        "command": "csharpTestLister.runAllTestsInClass",
+        "title": "Run All Tests in Class",
+        "icon": "$(play-circle)",
+        "category": "C# Test Lister"
+      },
+      {
+        "command": "csharpTestLister.runAllTestsInProject",
+        "title": "Run All Tests in Project",
+        "icon": "$(run-all)",
+        "category": "C# Test Lister"
+      },
+      {
+        "command": "csharpTestLister.goToTest",
+        "title": "Go to Test Definition",
+        "icon": "$(go-to-file)",
+        "category": "C# Test Lister"
+      },
+      {
+        "command": "csharpTestLister.copyTestName",
+        "title": "Copy Full Test Name",
+        "icon": "$(copy)",
+        "category": "C# Test Lister"
+      },
+      {
+        "command": "csharpTestLister.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)",
+        "category": "C# Test Lister"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "csharpTestLister.refresh",
+          "when": "view == csharpTestExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "csharpTestLister.collapseAll",
+          "when": "view == csharpTestExplorer",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "csharpTestLister.runTest",
+          "when": "view == csharpTestExplorer && viewItem == testMethod",
+          "group": "inline@1"
+        },
+        {
+          "command": "csharpTestLister.goToTest",
+          "when": "view == csharpTestExplorer && viewItem == testMethod",
+          "group": "inline@2"
+        },
+        {
+          "command": "csharpTestLister.runAllTestsInClass",
+          "when": "view == csharpTestExplorer && viewItem == testClass",
+          "group": "inline@1"
+        },
+        {
+          "command": "csharpTestLister.runAllTestsInProject",
+          "when": "view == csharpTestExplorer && viewItem == testProject",
+          "group": "inline@1"
+        },
+        {
+          "command": "csharpTestLister.copyTestName",
+          "when": "view == csharpTestExplorer && viewItem == testMethod",
+          "group": "context@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "C# Test Lister",
+      "properties": {
+        "csharpTestLister.discoveryMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "parse",
+            "dotnet-cli"
+          ],
+          "enumDescriptions": [
+            "Use dotnet CLI if available, fall back to file parsing",
+            "Always parse .cs source files directly",
+            "Always use 'dotnet test --list-tests' (requires dotnet CLI)"
+          ],
+          "default": "auto",
+          "description": "How tests are discovered in the workspace"
+        },
+        "csharpTestLister.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh the test list when .cs files are saved"
+        },
+        "csharpTestLister.showNamespace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show namespace as a grouping level in the tree"
+        },
+        "csharpTestLister.excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/obj/**",
+            "**/bin/**",
+            "**/node_modules/**"
+          ],
+          "description": "Glob patterns to exclude from test discovery"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.5",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "glob": "^10.3.10",
+    "minimatch": "^9.0.3"
+  }
+}

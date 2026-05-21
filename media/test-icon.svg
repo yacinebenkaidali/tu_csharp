@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <!-- Beaker / flask shape -->
+  <path
+    d="M6 1v5.5L2.5 13.5a.75.75 0 00.67 1.09h9.66a.75.75 0 00.67-1.09L10 6.5V1"
+    stroke="currentColor"
+    stroke-width="1.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <line x1="5" y1="1" x2="11" y2="1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Bubbles inside flask -->
+  <circle cx="6.5" cy="11" r="0.75" fill="currentColor"/>
+  <circle cx="9" cy="12.5" r="0.75" fill="currentColor"/>
+</svg>
