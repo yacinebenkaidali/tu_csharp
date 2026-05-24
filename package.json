@@ -83,9 +83,9 @@
         "category": "C# Test Lister"
       },
       {
-        "command": "tuCsharp.collapseAll",
-        "title": "Collapse All",
-        "icon": "$(collapse-all)",
+        "command": "tuCsharp.expandAll",
+        "title": "Expand All",
+        "icon": "$(expand-all)",
         "category": "C# Test Lister"
       }
     ],
@@ -97,7 +97,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "tuCsharp.collapseAll",
+          "command": "tuCsharp.expandAll",
           "when": "view == csharpTestExplorer",
           "group": "navigation@2"
         }

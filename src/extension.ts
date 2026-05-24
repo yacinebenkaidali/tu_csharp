@@ -51,13 +51,15 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("tuCsharp.refresh", () => refreshTests()),
 
-    vscode.commands.registerCommand("tuCsharp.collapseAll", () => {
-      vscode.commands.executeCommand(
-        "workbench.actions.treeView.csharpTestExplorer.collapseAll",
-      );
+    vscode.commands.registerCommand("tuCsharp.expandAll", async () => {
+      const roots = treeProvider.getChildren();
+      const items = roots instanceof Promise ? await roots : roots;
+      for (const item of items ?? []) {
+        await treeView.reveal(item, { expand: 3, select: false, focus: false });
+      }
     }),
 
-    vscode.commands.registerCommand(
+vscode.commands.registerCommand(
       "tuCsharp.goToTest",
       async (arg?: TestTreeItem) => {
         const method: TestMethod =
