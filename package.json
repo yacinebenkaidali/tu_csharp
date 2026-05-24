@@ -126,6 +126,11 @@
         {
           "command": "tuCsharp.copyTestName",
           "when": "view == csharpTestExplorer && viewItem == testMethod",
+          "group": "inline@3"
+        },
+        {
+          "command": "tuCsharp.copyTestName",
+          "when": "view == csharpTestExplorer && viewItem == testMethod",
           "group": "context@1"
         }
       ]
