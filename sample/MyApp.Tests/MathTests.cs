@@ -1,3 +1,4 @@
+using System;
 using Xunit;
 
 namespace MyApp.Tests;
@@ -30,6 +31,7 @@ public class MathTests
     [Fact]
     public void Divide_ByZero_ThrowsException()
     {
-        Assert.Throws<DivideByZeroException>(() => _ = 10 / 0);
+        int divisor = 0;
+        Assert.Throws<DivideByZeroException>(() => _ = 10 / divisor);
     }
 }
