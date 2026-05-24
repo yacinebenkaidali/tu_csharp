@@ -1,8 +1,16 @@
 .vscode/**
 .vscode-test/**
 src/**
+sample/**
 .gitignore
 **/tsconfig.json
 **/.eslintrc.json
 **/*.map
+smoke-test.mjs
+esbuild.mjs
 node_modules/**
+# Individual compiled files are redundant — everything is bundled into out/extension.js
+out/testDiscovery.js
+out/testRunner.js
+out/testTreeProvider.js
+out/types.js
