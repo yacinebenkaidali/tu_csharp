@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import type { TestClass, TestFramework, TestMethod, TestProject } from './types.js';
 
 // ─── Tree item types ──────────────────────────────────────────────────────────
@@ -26,7 +25,7 @@ export class TestTreeItem extends vscode.TreeItem {
 
     if (nodeData.kind === 'method' && nodeData.method.line > 0) {
       this.command = {
-        command: 'csharpTestLister.goToTest',
+        command: 'tuCsharp.goToTest',
         title: 'Go to Test',
         arguments: [nodeData.method],
       };

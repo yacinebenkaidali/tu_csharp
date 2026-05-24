@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Status bar item
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  statusBar.command = 'csharpTestLister.refresh';
+  statusBar.command = 'tuCsharp.refresh';
   statusBar.text = '$(beaker) C# Tests';
   statusBar.tooltip = 'Click to refresh C# tests';
   statusBar.show();
@@ -47,14 +47,15 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // ── Register commands ──
   context.subscriptions.push(
-    vscode.commands.registerCommand('csharpTestLister.refresh', () => refreshTests()),
+    vscode.commands.registerCommand('tuCsharp.refresh', () => refreshTests()),
 
-    vscode.commands.registerCommand('csharpTestLister.collapseAll', () => {
+    vscode.commands.registerCommand('tuCsharp.collapseAll', () => {
       vscode.commands.executeCommand('workbench.actions.treeView.csharpTestExplorer.collapseAll');
     }),
 
-    vscode.commands.registerCommand('csharpTestLister.goToTest', async (arg?: TestMethod) => {
-      const method = arg ?? (await pickTestMethod());
+    vscode.commands.registerCommand('tuCsharp.goToTest', async (arg?: TestTreeItem) => {
+      const method = (arg?.nodeData.kind === 'method' ? arg.nodeData.method : undefined)
+        ?? (await pickTestMethod());
       if (!method) {
         return;
       }
@@ -71,7 +72,7 @@ export function activate(context: vscode.ExtensionContext): void {
       });
     }),
 
-    vscode.commands.registerCommand('csharpTestLister.runTest', async (item?: TestTreeItem) => {
+    vscode.commands.registerCommand('tuCsharp.runTest', async (item?: TestTreeItem) => {
       let method: TestMethod | undefined;
       let project: TestProject | undefined;
 
@@ -90,7 +91,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.commands.registerCommand(
-      'csharpTestLister.runAllTestsInClass',
+      'tuCsharp.runAllTestsInClass',
       async (item?: TestTreeItem) => {
         let cls: TestClass | undefined;
         let project: TestProject | undefined;
@@ -108,7 +109,7 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
 
     vscode.commands.registerCommand(
-      'csharpTestLister.runAllTestsInProject',
+      'tuCsharp.runAllTestsInProject',
       async (item?: TestTreeItem) => {
         let project: TestProject | undefined;
 
@@ -124,7 +125,7 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
 
     vscode.commands.registerCommand(
-      'csharpTestLister.copyTestName',
+      'tuCsharp.copyTestName',
       async (item?: TestTreeItem) => {
         let name = '';
         if (item?.nodeData.kind === 'method') {
@@ -162,10 +163,10 @@ export function activate(context: vscode.ExtensionContext): void {
   // ── Config change listener ──
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
-      if (e.affectsConfiguration('csharpTestLister')) {
+      if (e.affectsConfiguration('tuCsharp')) {
         treeProvider.setShowNamespace(getConfig('showNamespace'));
-        if (e.affectsConfiguration('csharpTestLister.discoveryMode') ||
-            e.affectsConfiguration('csharpTestLister.excludePatterns')) {
+        if (e.affectsConfiguration('tuCsharp.discoveryMode') ||
+            e.affectsConfiguration('tuCsharp.excludePatterns')) {
           refreshTests();
         }
       }
@@ -221,7 +222,7 @@ async function refreshTests(): Promise<void> {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getConfig<T>(key: string): T {
-  return vscode.workspace.getConfiguration('csharpTestLister').get<T>(key) as T;
+  return vscode.workspace.getConfiguration('tuCsharp').get<T>(key) as T;
 }
 
 function updateStatusBar(projects: number, classes: number, methods: number): void {

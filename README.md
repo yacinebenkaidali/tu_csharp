@@ -65,10 +65,10 @@ C# Test Explorer
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `csharpTestLister.discoveryMode` | `"auto"` | `"auto"` / `"parse"` / `"dotnet-cli"` |
-| `csharpTestLister.autoRefresh` | `true` | Refresh tree on `.cs` file save |
-| `csharpTestLister.showNamespace` | `true` | Group classes by namespace |
-| `csharpTestLister.excludePatterns` | `["**/obj/**", "**/bin/**"]` | Glob patterns to skip |
+| `tuCsharp.discoveryMode` | `"auto"` | `"auto"` / `"parse"` / `"dotnet-cli"` |
+| `tuCsharp.autoRefresh` | `true` | Refresh tree on `.cs` file save |
+| `tuCsharp.showNamespace` | `true` | Group classes by namespace |
+| `tuCsharp.excludePatterns` | `["**/obj/**", "**/bin/**"]` | Glob patterns to skip |
 
 ### Discovery Modes
 

@@ -47,43 +47,43 @@
     },
     "commands": [
       {
-        "command": "csharpTestLister.refresh",
+        "command": "tuCsharp.refresh",
         "title": "Refresh Tests",
         "icon": "$(refresh)",
         "category": "C# Test Lister"
       },
       {
-        "command": "csharpTestLister.runTest",
+        "command": "tuCsharp.runTest",
         "title": "Run Test",
         "icon": "$(play)",
         "category": "C# Test Lister"
       },
       {
-        "command": "csharpTestLister.runAllTestsInClass",
+        "command": "tuCsharp.runAllTestsInClass",
         "title": "Run All Tests in Class",
         "icon": "$(play-circle)",
         "category": "C# Test Lister"
       },
       {
-        "command": "csharpTestLister.runAllTestsInProject",
+        "command": "tuCsharp.runAllTestsInProject",
         "title": "Run All Tests in Project",
         "icon": "$(run-all)",
         "category": "C# Test Lister"
       },
       {
-        "command": "csharpTestLister.goToTest",
+        "command": "tuCsharp.goToTest",
         "title": "Go to Test Definition",
         "icon": "$(go-to-file)",
         "category": "C# Test Lister"
       },
       {
-        "command": "csharpTestLister.copyTestName",
+        "command": "tuCsharp.copyTestName",
         "title": "Copy Full Test Name",
         "icon": "$(copy)",
         "category": "C# Test Lister"
       },
       {
-        "command": "csharpTestLister.collapseAll",
+        "command": "tuCsharp.collapseAll",
         "title": "Collapse All",
         "icon": "$(collapse-all)",
         "category": "C# Test Lister"
@@ -92,48 +92,48 @@
     "menus": {
       "view/title": [
         {
-          "command": "csharpTestLister.refresh",
+          "command": "tuCsharp.refresh",
           "when": "view == csharpTestExplorer",
           "group": "navigation@1"
         },
         {
-          "command": "csharpTestLister.collapseAll",
+          "command": "tuCsharp.collapseAll",
           "when": "view == csharpTestExplorer",
           "group": "navigation@2"
         }
       ],
       "view/item/context": [
         {
-          "command": "csharpTestLister.runTest",
+          "command": "tuCsharp.runTest",
           "when": "view == csharpTestExplorer && viewItem == testMethod",
           "group": "inline@1"
         },
         {
-          "command": "csharpTestLister.goToTest",
+          "command": "tuCsharp.goToTest",
           "when": "view == csharpTestExplorer && viewItem == testMethod",
           "group": "inline@2"
         },
         {
-          "command": "csharpTestLister.runAllTestsInClass",
+          "command": "tuCsharp.runAllTestsInClass",
           "when": "view == csharpTestExplorer && viewItem == testClass",
           "group": "inline@1"
         },
         {
-          "command": "csharpTestLister.runAllTestsInProject",
+          "command": "tuCsharp.runAllTestsInProject",
           "when": "view == csharpTestExplorer && viewItem == testProject",
           "group": "inline@1"
         },
         {
-          "command": "csharpTestLister.copyTestName",
+          "command": "tuCsharp.copyTestName",
           "when": "view == csharpTestExplorer && viewItem == testMethod",
           "group": "context@1"
         }
       ]
     },
     "configuration": {
-      "title": "C# Test Lister",
+      "title": "C# Tests Runner",
       "properties": {
-        "csharpTestLister.discoveryMode": {
+        "tuCsharp.discoveryMode": {
           "type": "string",
           "enum": [
             "auto",
@@ -148,17 +148,17 @@
           "default": "auto",
           "description": "How tests are discovered in the workspace"
         },
-        "csharpTestLister.autoRefresh": {
+        "tuCsharp.autoRefresh": {
           "type": "boolean",
           "default": true,
           "description": "Automatically refresh the test list when .cs files are saved"
         },
-        "csharpTestLister.showNamespace": {
+        "tuCsharp.showNamespace": {
           "type": "boolean",
           "default": true,
           "description": "Show namespace as a grouping level in the tree"
         },
-        "csharpTestLister.excludePatterns": {
+        "tuCsharp.excludePatterns": {
           "type": "array",
           "items": {
             "type": "string"
