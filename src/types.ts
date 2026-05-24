@@ -1,7 +1,7 @@
 /**
  * Supported test frameworks for C# projects.
  */
-export type TestFramework = 'xunit' | 'nunit' | 'mstest' | 'unknown';
+export type TestFramework = "xunit" | "nunit" | "mstest" | "unknown";
 
 /**
  * Represents a single test method discovered in a .cs file.
@@ -89,4 +89,8 @@ export interface TestRunResult {
 }
 
 /** Tree node context values used in package.json menus */
-export type TreeItemContext = 'testProject' | 'testNamespace' | 'testClass' | 'testMethod';
+export type TreeItemContext =
+  | "testProject"
+  | "testNamespace"
+  | "testClass"
+  | "testMethod";

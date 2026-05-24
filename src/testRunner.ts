@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
-import * as cp from 'child_process';
-import type { TestClass, TestMethod, TestProject } from './types.js';
+import * as vscode from "vscode";
+import * as cp from "child_process";
+import type { TestClass, TestMethod, TestProject } from "./types.js";
 
 export class TestRunner {
   private readonly _output: vscode.OutputChannel;
@@ -9,7 +9,7 @@ export class TestRunner {
   constructor(output: vscode.OutputChannel) {
     this._output = output;
     this._terminal = vscode.window.createTerminal({
-      name: 'C# Test Runner',
+      name: "C# Test Runner",
       isTransient: false,
     });
   }
@@ -18,7 +18,10 @@ export class TestRunner {
    * Run a single test method in the integrated terminal.
    */
   runTest(method: TestMethod, project: TestProject): void {
-    const filter = this.buildFilter(method.fullyQualifiedName, project.framework);
+    const filter = this.buildFilter(
+      method.fullyQualifiedName,
+      project.framework,
+    );
     this.runCommand(`dotnet test "${project.projectPath}" ${filter}`, project);
   }
 
@@ -26,7 +29,10 @@ export class TestRunner {
    * Run all tests in a test class.
    */
   runClass(cls: TestClass, project: TestProject): void {
-    const filter = this.buildClassFilter(cls.fullyQualifiedName, project.framework);
+    const filter = this.buildClassFilter(
+      cls.fullyQualifiedName,
+      project.framework,
+    );
     this.runCommand(`dotnet test "${project.projectPath}" ${filter}`, project);
   }
 
@@ -51,13 +57,13 @@ export class TestRunner {
 
   private buildFilter(fqn: string, framework: string): string {
     switch (framework) {
-      case 'xunit':
+      case "xunit":
         // xUnit uses --filter "FullyQualifiedName=..."
         return `--filter "FullyQualifiedName=${fqn}"`;
-      case 'nunit':
+      case "nunit":
         // NUnit uses --filter "FullName=..."
         return `--filter "FullName=${fqn}"`;
-      case 'mstest':
+      case "mstest":
         // MSTest uses --filter "FullyQualifiedName=..."
         return `--filter "FullyQualifiedName=${fqn}"`;
       default:
@@ -67,11 +73,11 @@ export class TestRunner {
 
   private buildClassFilter(classFqn: string, framework: string): string {
     switch (framework) {
-      case 'xunit':
+      case "xunit":
         return `--filter "FullyQualifiedName~${classFqn}"`;
-      case 'nunit':
+      case "nunit":
         return `--filter "FullName~${classFqn}"`;
-      case 'mstest':
+      case "mstest":
         return `--filter "FullyQualifiedName~${classFqn}"`;
       default:
         return `--filter "FullyQualifiedName~${classFqn}"`;

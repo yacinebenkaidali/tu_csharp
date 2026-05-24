@@ -1,9 +1,14 @@
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as cp from 'child_process';
-import { glob } from 'glob';
-import type { TestClass, TestFramework, TestMethod, TestProject } from './types.js';
+import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
+import * as cp from "child_process";
+import { glob } from "glob";
+import type {
+  TestClass,
+  TestFramework,
+  TestMethod,
+  TestProject,
+} from "./types.js";
 
 // ─── Regex patterns ──────────────────────────────────────────────────────────
 
@@ -12,49 +17,52 @@ const TEST_ATTR_RE =
   /\[\s*(Fact|Theory|Test|TestCase|TestCaseSource|TestMethod|DataTestMethod|DataRow|InlineData|MemberData|ClassData|TestFixture|SetUp|TearDown|OneTimeSetUp|OneTimeTearDown|Ignore|Skip|RetryOnFailure)(?:\s*\([^)]*\))?\s*\]/g;
 
 /** Captures InlineData / TestCase / DataRow argument strings. */
-const TEST_DATA_RE =
-  /\[\s*(?:InlineData|TestCase|DataRow)\s*\(([^)]+)\)\s*\]/g;
+const TEST_DATA_RE = /\[\s*(?:InlineData|TestCase|DataRow)\s*\(([^)]+)\)\s*\]/g;
 
 /** Matches a C# namespace declaration (file-scoped or block). */
 const NAMESPACE_RE = /^\s*namespace\s+([\w.]+)/;
 
 /** Matches a class declaration (simplified). */
-const CLASS_RE = /^\s*(?:public|internal|private|protected)?\s*(?:abstract\s+)?(?:partial\s+)?class\s+(\w+)/;
+const CLASS_RE =
+  /^\s*(?:public|internal|private|protected)?\s*(?:abstract\s+)?(?:partial\s+)?class\s+(\w+)/;
 
 /** Matches a method declaration with common test-method signatures. */
 const METHOD_RE =
   /^\s*(?:public|internal|private|protected)\s+(?:async\s+)?(?:Task|void|[\w<>[\]]+)\s+(\w+)\s*\(/;
 
 /** Matches a display name attribute. */
-const DISPLAY_NAME_RE = /\[\s*(?:DisplayName|TestName)\s*\(\s*"([^"]+)"\s*\)\s*\]/;
+const DISPLAY_NAME_RE =
+  /\[\s*(?:DisplayName|TestName)\s*\(\s*"([^"]+)"\s*\)\s*\]/;
 
 // ─── Framework detection ──────────────────────────────────────────────────────
 
 function detectFrameworkFromCsproj(csprojContent: string): TestFramework {
   if (/xunit/i.test(csprojContent)) {
-    return 'xunit';
+    return "xunit";
   }
   if (/nunit/i.test(csprojContent)) {
-    return 'nunit';
+    return "nunit";
   }
   if (/mstest|Microsoft\.VisualStudio\.TestTools/i.test(csprojContent)) {
-    return 'mstest';
+    return "mstest";
   }
-  return 'unknown';
+  return "unknown";
 }
 
 function detectFrameworkFromAttributes(attributes: string[]): TestFramework {
-  const flat = attributes.join(' ').toLowerCase();
+  const flat = attributes.join(" ").toLowerCase();
   if (/\bfact\b|\btheory\b|\binlinedata\b|\bmemberdata\b/.test(flat)) {
-    return 'xunit';
+    return "xunit";
   }
-  if (/\btest\b|\btestcase\b|\btestfixture\b|\bsetup\b|\bteardown\b/.test(flat)) {
-    return 'nunit';
+  if (
+    /\btest\b|\btestcase\b|\btestfixture\b|\bsetup\b|\bteardown\b/.test(flat)
+  ) {
+    return "nunit";
   }
   if (/\btestmethod\b|\bdatatestmethod\b|\bdatarow\b/.test(flat)) {
-    return 'mstest';
+    return "mstest";
   }
-  return 'unknown';
+  return "unknown";
 }
 
 // ─── .cs file parser ──────────────────────────────────────────────────────────
@@ -65,15 +73,15 @@ function detectFrameworkFromAttributes(attributes: string[]): TestFramework {
 export function parseCsFile(filePath: string): TestClass[] {
   let content: string;
   try {
-    content = fs.readFileSync(filePath, 'utf8');
+    content = fs.readFileSync(filePath, "utf8");
   } catch {
     return [];
   }
 
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   const classes: TestClass[] = [];
 
-  let currentNamespace = '';
+  let currentNamespace = "";
   let currentClass: TestClass | null = null;
   /** Attributes accumulated since the last non-attribute line */
   let pendingAttributes: string[] = [];
@@ -90,9 +98,9 @@ export function parseCsFile(filePath: string): TestClass[] {
 
     // Count braces
     for (const ch of line) {
-      if (ch === '{') {
+      if (ch === "{") {
         braceDepth++;
-      } else if (ch === '}') {
+      } else if (ch === "}") {
         braceDepth--;
         if (currentClass && braceDepth < classBraceDepth) {
           // Leaving the class body
@@ -118,7 +126,7 @@ export function parseCsFile(filePath: string): TestClass[] {
     // Accumulate attributes
     const attrMatches = [...line.matchAll(TEST_ATTR_RE)];
     if (attrMatches.length > 0) {
-      pendingAttributes.push(...attrMatches.map(m => m[1]));
+      pendingAttributes.push(...attrMatches.map((m) => m[1]));
 
       // Grab inline test data
       for (const dm of line.matchAll(TEST_DATA_RE)) {
@@ -137,7 +145,9 @@ export function parseCsFile(filePath: string): TestClass[] {
     const classMatch = CLASS_RE.exec(line);
     if (classMatch) {
       const className = classMatch[1];
-      const fqn = currentNamespace ? `${currentNamespace}.${className}` : className;
+      const fqn = currentNamespace
+        ? `${currentNamespace}.${className}`
+        : className;
 
       // Only track if it has test-related attributes OR we'll let it accumulate
       // (we filter at the end: keep classes with at least one test method)
@@ -147,7 +157,7 @@ export function parseCsFile(filePath: string): TestClass[] {
         fullyQualifiedName: fqn,
         filePath,
         line: lineNum,
-        framework: 'unknown',
+        framework: "unknown",
         methods: [],
       };
       classBraceDepth = braceDepth; // depth at the opening {
@@ -170,7 +180,8 @@ export function parseCsFile(filePath: string): TestClass[] {
           name: methodName,
           fullyQualifiedName: fqn,
           attributes: [...pendingAttributes],
-          testData: pendingTestData.length > 0 ? [...pendingTestData] : undefined,
+          testData:
+            pendingTestData.length > 0 ? [...pendingTestData] : undefined,
           displayName: pendingDisplayName,
           framework,
           filePath,
@@ -178,12 +189,17 @@ export function parseCsFile(filePath: string): TestClass[] {
         };
 
         currentClass.methods.push(method);
-        currentClass.framework = framework !== 'unknown' ? framework : currentClass.framework;
+        currentClass.framework =
+          framework !== "unknown" ? framework : currentClass.framework;
       }
     }
 
     // Clear pending if we hit a non-attribute, non-empty line
-    if (line.trim() && !line.trim().startsWith('[') && !line.trim().startsWith('//')) {
+    if (
+      line.trim() &&
+      !line.trim().startsWith("[") &&
+      !line.trim().startsWith("//")
+    ) {
       pendingAttributes = [];
       pendingTestData = [];
       pendingDisplayName = undefined;
@@ -205,9 +221,9 @@ export function parseCsFile(filePath: string): TestClass[] {
  */
 async function findCsprojFiles(
   workspaceRoot: string,
-  excludePatterns: string[]
+  excludePatterns: string[],
 ): Promise<string[]> {
-  return glob('**/*.csproj', {
+  return glob("**/*.csproj", {
     cwd: workspaceRoot,
     ignore: excludePatterns,
     absolute: true,
@@ -219,9 +235,9 @@ async function findCsprojFiles(
  */
 async function findCsFilesInProject(
   projectDir: string,
-  excludePatterns: string[]
+  excludePatterns: string[],
 ): Promise<string[]> {
-  return glob('**/*.cs', {
+  return glob("**/*.cs", {
     cwd: projectDir,
     ignore: excludePatterns,
     absolute: true,
@@ -247,7 +263,7 @@ interface SourceLocation {
  */
 async function buildLocationMap(
   projectDir: string,
-  excludePatterns: string[]
+  excludePatterns: string[],
 ): Promise<Map<string, SourceLocation>> {
   const locationMap = new Map<string, SourceLocation>();
   const csFiles = await findCsFilesInProject(projectDir, excludePatterns);
@@ -278,7 +294,7 @@ async function buildLocationMap(
 
 function isDotnetAvailable(): boolean {
   try {
-    cp.execSync('dotnet --version', { stdio: 'ignore', timeout: 5000 });
+    cp.execSync("dotnet --version", { stdio: "ignore", timeout: 5000 });
     return true;
   } catch {
     return false;
@@ -288,26 +304,30 @@ function isDotnetAvailable(): boolean {
 /**
  * Uses `dotnet test --list-tests` to discover tests. Returns null on failure.
  */
-function discoverViaDotnetCli(
-  projectPath: string): string[] | null {
+function discoverViaDotnetCli(projectPath: string): string[] | null {
   try {
-    const output = cp.execSync(`dotnet test "${projectPath}" --list-tests --no-build`, {
-      timeout: 30_000,
-      encoding: 'utf8',
-    });
+    const output = cp.execSync(
+      `dotnet test "${projectPath}" --list-tests --no-build`,
+      {
+        timeout: 30_000,
+        encoding: "utf8",
+      },
+    );
     // Output looks like:
     //   The following Tests are available:
     //     MyApp.Tests.MathTests.ShouldAddTwoNumbers
     //     ...
-    const lines = output.split('\n');
-    const startIdx = lines.findIndex(l => /The following Tests are available/i.test(l));
+    const lines = output.split("\n");
+    const startIdx = lines.findIndex((l) =>
+      /The following Tests are available/i.test(l),
+    );
     if (startIdx === -1) {
       return null;
     }
     return lines
       .slice(startIdx + 1)
-      .map(l => l.trim())
-      .filter(l => l.length > 0);
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
   } catch {
     return null;
   }
@@ -315,7 +335,7 @@ function discoverViaDotnetCli(
 
 // ─── Main discovery entry point ───────────────────────────────────────────────
 
-export type DiscoveryMode = 'auto' | 'parse' | 'dotnet-cli';
+export type DiscoveryMode = "auto" | "parse" | "dotnet-cli";
 
 /**
  * Discovers all test projects and their tests in the given workspace root.
@@ -324,28 +344,28 @@ export async function discoverTests(
   workspaceRoot: string,
   mode: DiscoveryMode,
   excludePatterns: string[],
-  output: vscode.OutputChannel
+  output: vscode.OutputChannel,
 ): Promise<TestProject[]> {
   const csprojFiles = await findCsprojFiles(workspaceRoot, excludePatterns);
 
   if (csprojFiles.length === 0) {
-    output.appendLine('[C# Test Lister] No .csproj files found in workspace.');
+    output.appendLine("[C# Test Lister] No .csproj files found in workspace.");
     return [];
   }
 
   output.appendLine(
-    `[C# Test Lister] Found ${csprojFiles.length} project(s): ${csprojFiles.map(p => path.basename(p)).join(', ')}`
+    `[C# Test Lister] Found ${csprojFiles.length} project(s): ${csprojFiles.map((p) => path.basename(p)).join(", ")}`,
   );
 
   const projects: TestProject[] = [];
 
   for (const csprojPath of csprojFiles) {
     const projectDir = path.dirname(csprojPath);
-    const projectName = path.basename(csprojPath, '.csproj');
+    const projectName = path.basename(csprojPath, ".csproj");
 
-    let csprojContent = '';
+    let csprojContent = "";
     try {
-      csprojContent = fs.readFileSync(csprojPath, 'utf8');
+      csprojContent = fs.readFileSync(csprojPath, "utf8");
     } catch {
       /* ignore */
     }
@@ -354,9 +374,9 @@ export async function discoverTests(
 
     // Only include projects that look like test projects (have xunit/nunit/mstest references)
     // unless we find test classes via parsing anyway
-    const isLikelyTestProject = framework !== 'unknown';
+    const isLikelyTestProject = framework !== "unknown";
 
-    if (!isLikelyTestProject && mode === 'dotnet-cli') {
+    if (!isLikelyTestProject && mode === "dotnet-cli") {
       // Skip non-test projects for CLI mode
       continue;
     }
@@ -370,39 +390,55 @@ export async function discoverTests(
     };
 
     const useCli =
-      mode === 'dotnet-cli' || (mode === 'auto' && isDotnetAvailable() && isLikelyTestProject);
+      mode === "dotnet-cli" ||
+      (mode === "auto" && isDotnetAvailable() && isLikelyTestProject);
 
     if (useCli) {
-      output.appendLine(`[C# Test Lister] Using dotnet CLI for: ${projectName}`);
+      output.appendLine(
+        `[C# Test Lister] Using dotnet CLI for: ${projectName}`,
+      );
       const fqns = discoverViaDotnetCli(csprojPath);
       if (fqns !== null) {
         // Parse source files in parallel to get file + line locations, then
         // merge them into the CLI results so navigation works correctly.
-        output.appendLine(`[C# Test Lister] Building location map from source for: ${projectName}`);
+        output.appendLine(
+          `[C# Test Lister] Building location map from source for: ${projectName}`,
+        );
         const locationMap = await buildLocationMap(projectDir, excludePatterns);
-        project.classes = fqnsToClasses(fqns, csprojPath, framework, locationMap);
+        project.classes = fqnsToClasses(
+          fqns,
+          csprojPath,
+          framework,
+          locationMap,
+        );
         projects.push(project);
         continue;
       }
-      output.appendLine(`[C# Test Lister] dotnet CLI failed for ${projectName}, falling back to parse`);
+      output.appendLine(
+        `[C# Test Lister] dotnet CLI failed for ${projectName}, falling back to parse`,
+      );
     }
 
     // Parse mode (or fallback)
-    output.appendLine(`[C# Test Lister] Parsing source files for: ${projectName}`);
+    output.appendLine(
+      `[C# Test Lister] Parsing source files for: ${projectName}`,
+    );
     const csFiles = await findCsFilesInProject(projectDir, excludePatterns);
     output.appendLine(`[C# Test Lister]   → ${csFiles.length} .cs files`);
 
     for (const csFile of csFiles) {
       const classes = parseCsFile(csFile);
       // Only keep classes that actually have test methods
-      const testClasses = classes.filter(c => c.methods.length > 0);
+      const testClasses = classes.filter((c) => c.methods.length > 0);
       project.classes.push(...testClasses);
     }
 
     if (project.classes.length > 0 || isLikelyTestProject) {
       // Update framework from found classes if project-level detection was unknown
-      if (project.framework === 'unknown' && project.classes.length > 0) {
-        const nonUnknown = project.classes.find(c => c.framework !== 'unknown');
+      if (project.framework === "unknown" && project.classes.length > 0) {
+        const nonUnknown = project.classes.find(
+          (c) => c.framework !== "unknown",
+        );
         if (nonUnknown) {
           project.framework = nonUnknown.framework;
         }
@@ -411,8 +447,13 @@ export async function discoverTests(
     }
   }
 
-  const total = projects.reduce((sum, p) => sum + p.classes.reduce((s2, c) => s2 + c.methods.length, 0), 0);
-  output.appendLine(`[C# Test Lister] Discovery complete: ${total} test(s) in ${projects.length} project(s)`);
+  const total = projects.reduce(
+    (sum, p) => sum + p.classes.reduce((s2, c) => s2 + c.methods.length, 0),
+    0,
+  );
+  output.appendLine(
+    `[C# Test Lister] Discovery complete: ${total} test(s) in ${projects.length} project(s)`,
+  );
 
   return projects;
 }
@@ -431,22 +472,22 @@ function fqnsToClasses(
   fqns: string[],
   projectPath: string,
   framework: TestFramework,
-  locationMap: Map<string, SourceLocation>
+  locationMap: Map<string, SourceLocation>,
 ): TestClass[] {
   const classMap = new Map<string, TestClass>();
 
   for (const fqn of fqns) {
     // Strip parameter suffix so "Method(a: 1, b: 2)" → "Method" for source lookup.
-    const baseFqn = fqn.replace(/\(.*\)$/, '');
+    const baseFqn = fqn.replace(/\(.*\)$/, "");
 
-    const parts = baseFqn.split('.');
+    const parts = baseFqn.split(".");
     if (parts.length < 2) {
       continue;
     }
     const methodName = parts[parts.length - 1];
     const className = parts[parts.length - 2];
-    const namespace = parts.slice(0, parts.length - 2).join('.');
-    const classFqn = parts.slice(0, parts.length - 1).join('.');
+    const namespace = parts.slice(0, parts.length - 2).join(".");
+    const classFqn = parts.slice(0, parts.length - 1).join(".");
 
     if (!classMap.has(classFqn)) {
       const classLoc = locationMap.get(classFqn);
@@ -465,7 +506,7 @@ function fqnsToClasses(
     const methodLoc = locationMap.get(baseFqn);
     cls.methods.push({
       name: methodName,
-      fullyQualifiedName: fqn,           // keep the original FQN (with params) for test filtering
+      fullyQualifiedName: fqn, // keep the original FQN (with params) for test filtering
       attributes: methodLoc?.attributes ?? [],
       testData: methodLoc?.testData,
       displayName: methodLoc?.displayName,
