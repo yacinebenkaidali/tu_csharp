@@ -207,7 +207,6 @@ async function findCsprojFiles(
   workspaceRoot: string,
   excludePatterns: string[]
 ): Promise<string[]> {
-  const excludeStr = `{${excludePatterns.join(',')}}`;
   return glob('**/*.csproj', {
     cwd: workspaceRoot,
     ignore: excludePatterns,
@@ -229,6 +228,52 @@ async function findCsFilesInProject(
   });
 }
 
+// ─── Location map (FQN → source position) ────────────────────────────────────
+
+/**
+ * Per-symbol source location and metadata, populated by parsing .cs files.
+ */
+interface SourceLocation {
+  filePath: string;
+  line: number;
+  attributes: string[];
+  testData?: string[];
+  displayName?: string;
+}
+
+/**
+ * Parses all .cs files in a project and returns a map from fully-qualified name
+ * to source location. Both class FQNs and method FQNs are indexed.
+ */
+async function buildLocationMap(
+  projectDir: string,
+  excludePatterns: string[]
+): Promise<Map<string, SourceLocation>> {
+  const locationMap = new Map<string, SourceLocation>();
+  const csFiles = await findCsFilesInProject(projectDir, excludePatterns);
+
+  for (const csFile of csFiles) {
+    for (const cls of parseCsFile(csFile)) {
+      locationMap.set(cls.fullyQualifiedName, {
+        filePath: cls.filePath,
+        line: cls.line,
+        attributes: [],
+      });
+      for (const method of cls.methods) {
+        locationMap.set(method.fullyQualifiedName, {
+          filePath: method.filePath,
+          line: method.line,
+          attributes: method.attributes,
+          testData: method.testData,
+          displayName: method.displayName,
+        });
+      }
+    }
+  }
+
+  return locationMap;
+}
+
 // ─── dotnet CLI discovery ─────────────────────────────────────────────────────
 
 function isDotnetAvailable(): boolean {
@@ -243,7 +288,8 @@ function isDotnetAvailable(): boolean {
 /**
  * Uses `dotnet test --list-tests` to discover tests. Returns null on failure.
  */
-function discoverViaDotnetCli(projectPath: string): string[] | null {
+function discoverViaDotnetCli(
+  projectPath: string): string[] | null {
   try {
     const output = cp.execSync(`dotnet test "${projectPath}" --list-tests --no-build`, {
       timeout: 30_000,
@@ -330,8 +376,11 @@ export async function discoverTests(
       output.appendLine(`[C# Test Lister] Using dotnet CLI for: ${projectName}`);
       const fqns = discoverViaDotnetCli(csprojPath);
       if (fqns !== null) {
-        // Convert FQNs to our data model (we won't have file locations)
-        project.classes = fqnsToClasses(fqns, csprojPath, framework);
+        // Parse source files in parallel to get file + line locations, then
+        // merge them into the CLI results so navigation works correctly.
+        output.appendLine(`[C# Test Lister] Building location map from source for: ${projectName}`);
+        const locationMap = await buildLocationMap(projectDir, excludePatterns);
+        project.classes = fqnsToClasses(fqns, csprojPath, framework, locationMap);
         projects.push(project);
         continue;
       }
@@ -371,14 +420,26 @@ export async function discoverTests(
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Converts a list of fully-qualified test names (from dotnet CLI) into TestClass objects.
- * File location info is not available in this mode.
+ * Converts a list of fully-qualified test names (from dotnet CLI) into TestClass objects,
+ * enriched with source locations from the parsed location map.
+ *
+ * Parameterized test FQNs from the CLI look like:
+ *   "MyApp.Tests.MathTests.Multiply_ReturnsCorrectProduct(a: 2, b: 3, expected: 6)"
+ * The base FQN (without the parameter suffix) is used to look up the source location.
  */
-function fqnsToClasses(fqns: string[], projectPath: string, framework: TestFramework): TestClass[] {
+function fqnsToClasses(
+  fqns: string[],
+  projectPath: string,
+  framework: TestFramework,
+  locationMap: Map<string, SourceLocation>
+): TestClass[] {
   const classMap = new Map<string, TestClass>();
 
   for (const fqn of fqns) {
-    const parts = fqn.split('.');
+    // Strip parameter suffix so "Method(a: 1, b: 2)" → "Method" for source lookup.
+    const baseFqn = fqn.replace(/\(.*\)$/, '');
+
+    const parts = baseFqn.split('.');
     if (parts.length < 2) {
       continue;
     }
@@ -388,25 +449,29 @@ function fqnsToClasses(fqns: string[], projectPath: string, framework: TestFrame
     const classFqn = parts.slice(0, parts.length - 1).join('.');
 
     if (!classMap.has(classFqn)) {
+      const classLoc = locationMap.get(classFqn);
       classMap.set(classFqn, {
         name: className,
         namespace,
         fullyQualifiedName: classFqn,
-        filePath: projectPath, // best we can do without parsing
-        line: 0,
+        filePath: classLoc?.filePath ?? projectPath,
+        line: classLoc?.line ?? 0,
         framework,
         methods: [],
       });
     }
 
     const cls = classMap.get(classFqn)!;
+    const methodLoc = locationMap.get(baseFqn);
     cls.methods.push({
       name: methodName,
-      fullyQualifiedName: fqn,
-      attributes: [],
+      fullyQualifiedName: fqn,           // keep the original FQN (with params) for test filtering
+      attributes: methodLoc?.attributes ?? [],
+      testData: methodLoc?.testData,
+      displayName: methodLoc?.displayName,
       framework,
-      filePath: projectPath,
-      line: 0,
+      filePath: methodLoc?.filePath ?? projectPath,
+      line: methodLoc?.line ?? 0,
     });
   }
 
