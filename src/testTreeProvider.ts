@@ -23,6 +23,7 @@ export class TestTreeItem extends vscode.TreeItem {
     collapsibleState: vscode.TreeItemCollapsibleState,
   ) {
     super(TestTreeItem.labelFor(nodeData), collapsibleState);
+    this.id = TestTreeItem.idFor(nodeData);
     this.tooltip = TestTreeItem.tooltipFor(nodeData);
     this.iconPath = TestTreeItem.iconFor(nodeData);
     this.contextValue = TestTreeItem.contextValueFor(nodeData);
@@ -34,6 +35,15 @@ export class TestTreeItem extends vscode.TreeItem {
         title: "Go to Test",
         arguments: [nodeData.method],
       };
+    }
+  }
+
+  static idFor(node: NodeKind): string {
+    switch (node.kind) {
+      case "project":   return `project:${node.project.projectPath}`;
+      case "namespace": return `ns:${node.project.projectPath}::${node.namespace}`;
+      case "class":     return `class:${node.cls.fullyQualifiedName}`;
+      case "method":    return `method:${node.method.fullyQualifiedName}`;
     }
   }
 
@@ -172,6 +182,41 @@ export class CSharpTestTreeProvider implements vscode.TreeDataProvider<TestTreeI
 
   getTreeItem(element: TestTreeItem): TestTreeItem {
     return element;
+  }
+
+  getParent(element: TestTreeItem): vscode.ProviderResult<TestTreeItem> {
+    const node = element.nodeData;
+    switch (node.kind) {
+      case "project":
+        return undefined; // root — no parent
+
+      case "namespace":
+        return new TestTreeItem(
+          { kind: "project", project: node.project },
+          vscode.TreeItemCollapsibleState.Expanded,
+        );
+
+      case "class": {
+        const project = this._projects.find((p) => p.classes.includes(node.cls));
+        if (!project) { return undefined; }
+        if (this._showNamespace) {
+          return new TestTreeItem(
+            { kind: "namespace", namespace: node.cls.namespace, project },
+            vscode.TreeItemCollapsibleState.Expanded,
+          );
+        }
+        return new TestTreeItem(
+          { kind: "project", project },
+          vscode.TreeItemCollapsibleState.Expanded,
+        );
+      }
+
+      case "method":
+        return new TestTreeItem(
+          { kind: "class", cls: node.cls },
+          vscode.TreeItemCollapsibleState.Expanded,
+        );
+    }
   }
 
   getChildren(element?: TestTreeItem): vscode.ProviderResult<TestTreeItem[]> {
