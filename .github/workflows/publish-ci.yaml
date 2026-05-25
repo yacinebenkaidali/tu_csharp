@@ -20,10 +20,13 @@ jobs:
 
       # Package once, reuse the .vsix for both registries
       - name: Package extension
-        run: npx vsce package
+        id: package
+        run: |
+          npx vsce package
+          echo "vsix=$(ls *.vsix)" >> $GITHUB_OUTPUT
 
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.PUBLISH_ACCESS_KEY }}
-          extensionFile: ./*.vsix
+          extensionFile: ${{ steps.package.outputs.vsix }}
