@@ -3,7 +3,7 @@
   "displayName": "C# Test Lister",
   "description": "Lists and navigates tests in C# .NET projects (xUnit, NUnit, MSTest)",
   "version": "0.1.0",
-  "publisher": "tu-csharp",
+  "publisher": "yacinebenkaidali",
   "engines": {
     "vscode": "^1.85.0"
   },
