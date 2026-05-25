@@ -178,7 +178,11 @@
       }
     }
   },
-  "repository": "https://github.com/yacinebenkaidali/tu_csharp",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yacinebenkaidali/tu_csharp"
+  },
   "scripts": {
     "vscode:prepublish": "node esbuild.mjs",
     "compile": "tsc -p ./",
@@ -188,9 +192,11 @@
     "lint": "eslint src --ext ts",
     "pretest": "npm run compile",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package"
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
+    "@vscode/vsce": "^3.9.1",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.5",
@@ -203,7 +209,6 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@vscode/vsce": "^3.9.1",
     "glob": "^10.3.10",
     "minimatch": "^9.0.3"
   }
